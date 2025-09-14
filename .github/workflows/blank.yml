@@ -1,0 +1,29 @@
+            echo "biralo ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/biralo
+          fi
+
+      - name: Start tmate session for SSH access
+        uses: mxschmitt/action-tmate@v3
+
+      - name: Show Tailscale IP and tmate info
+        run: |
+          echo "ðŸ”— Tailscale IP:"
+          tailscale ip -4 || echo "Tailscale IP not found"
+          echo ""
+          echo "ðŸ”‘ tmate SSH session:"
+          cat $HOME/.tmate.sock/ssh
+
+      - name: Sleep to keep VPS alive
+        run: sleep 21600  # 6 hours
+
+      - name: Backup VPS data and tailscale state
+        run: |
+          sudo mkdir -p /opt/vps-backup/data
+          sudo cp /var/lib/tailscale/tailscaled.state /opt/vps-backup/data/
+          sudo chown -R $USER:$USER /opt/vps-backup
+          zip -r backup.zip /opt/vps-backup
+
+      - name: Upload VPS backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vps-backup
+          path: backup.zip
